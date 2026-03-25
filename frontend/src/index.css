@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Google font display settings ───────────────────────────────────── */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #f5f4ef;
+    color: #1a1825;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  /* Dot texture on the warm cream base — matches HEX reference */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: radial-gradient(circle, rgba(26,24,37,0.055) 1px, transparent 1px);
+    background-size: 22px 22px;
+    pointer-events: none;
+  }
+
+  * { box-sizing: border-box; }
+
+  ::-webkit-scrollbar       { width: 5px; }
+  ::-webkit-scrollbar-track { background: #eceae3; }
+  ::-webkit-scrollbar-thumb { background: #c5c3bc; border-radius: 99px; }
+}
+
+@layer components {
+
+  /* ── PRIMARY filled button (blue, rounded-btn) ─────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           bg-accent hover:bg-accent-dark active:scale-[0.97]
+           text-white font-semibold rounded-btn
+           px-5 py-2.5 text-sm
+           shadow-btn-accent transition-all duration-200
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none;
+  }
+
+  /* ── GHOST outlined button — HEX-style rectangular border ────────── */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2
+           bg-transparent rounded-btn
+           px-5 py-2.5 text-sm font-semibold
+           transition-all duration-200
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    border: 1.5px solid rgba(26,24,37,0.25);
+    color: #1a1825 !important;
+  }
+  .btn-ghost:hover {
+    border-color: rgba(26,24,37,0.55);
+    background-color: rgba(26,24,37,0.04);
+  }
+
+  /* ── DARK solid button (HEX "Get started" style) ─────────────────── */
+  .btn-dark {
+    @apply inline-flex items-center justify-center gap-2
+           rounded-btn px-5 py-2.5 text-sm font-semibold
+           active:scale-[0.97] transition-all duration-200;
+    background-color: #1a1825;
+    color: #ffffff;
+    box-shadow: 0 1px 4px rgba(26,24,37,0.22);
+  }
+  .btn-dark:hover { background-color: #2c2a38; }
+
+  /* ── Card ─────────────────────────────────────────────────────────── */
+  .card {
+    @apply bg-card rounded-card shadow-card;
+  }
+
+  /* ── Input — no border, warm surface fill ─────────────────────────── */
+  .input {
+    @apply w-full bg-surface rounded-input px-3.5 py-2.5
+           text-primary placeholder-tertiary text-sm font-medium
+           focus:outline-none focus:ring-2 focus:ring-accent/20 focus:bg-white
+           transition-all duration-200;
+  }
+
+  /* ── Badge pill ───────────────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-pill;
+  }
+
+  /* ── Skeleton ─────────────────────────────────────────────────────── */
+  .skeleton {
+    @apply rounded-input;
+    background: linear-gradient(90deg, #eceae3 25%, #e4e2da 50%, #eceae3 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s infinite linear;
+  }
+
+  /* ── Section label ────────────────────────────────────────────────── */
+  .label-muted {
+    @apply text-[10.5px] font-bold uppercase tracking-[0.16em] text-tertiary;
+  }
+
+  /* ── Table cells ──────────────────────────────────────────────────── */
+  .th {
+    @apply pb-3 text-left text-[10.5px] font-bold uppercase tracking-[0.12em] text-tertiary;
+  }
+  .td {
+    @apply py-4 text-sm text-primary align-middle;
+  }
+
+  /* ── Editorial serif heading utility ─────────────────────────────── */
+  .heading-serif {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-style: italic;
+  }
+}
