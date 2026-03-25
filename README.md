@@ -135,9 +135,7 @@ App runs at `http://localhost:5173`.
 
 ---
 
-## Screenshots
 
-_Add screenshots here after running the app._
 
 ---
 
