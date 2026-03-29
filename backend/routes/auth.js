@@ -1,8 +1,11 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const { User } = require('../models');
 require('dotenv').config();
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const router = express.Router();
 
@@ -87,6 +90,34 @@ router.post('/login', async (req, res) => {
   } catch (err) {
     console.error('Login error:', err);
     return res.status(500).json({ message: 'Server error during login.' });
+  }
+});
+
+// POST /api/auth/google-token  (access-token flow — userInfo fetched client-side)
+router.post('/google-token', async (req, res) => {
+  try {
+    const { userInfo } = req.body;
+    if (!userInfo?.email) return res.status(400).json({ message: 'Invalid Google user info.' });
+
+    const { email, name, sub: googleId } = userInfo;
+
+    let user = await User.findOne({ where: { email } });
+    if (!user) {
+      user = await User.create({ name, email, googleId, role: 'buyer' });
+    } else if (!user.googleId) {
+      await user.update({ googleId });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role, name: user.name },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    return res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+  } catch (err) {
+    console.error('Google auth error:', err);
+    return res.status(401).json({ message: 'Google authentication failed.' });
   }
 });
 

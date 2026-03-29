@@ -190,7 +190,7 @@ function CreateForm({ categories, onSuccess }) {
         <div>
           <label className="field-label">Starting Bid <span className="text-live-red">*</span></label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary text-sm font-medium">₹</span>
+            <span className="absolute left-1 top-1/2 -translate-y-1/2 text-tertiary text-sm font-medium">₹</span>
             <input name="startingPrice" type="number" className="field-input pl-6"
               value={form.startingPrice} onChange={change} placeholder="0.00" min="0.01" step="0.01" />
           </div>
@@ -797,7 +797,7 @@ export default function SellerDashboard() {
   const { showToast } = useToast();
 
   // single view state drives everything
-  const [view, setView] = useState('dashboard'); // dashboard | live | inventory | financials | analytics | settings
+  const [view, setView] = useState('dashboard'); // dashboard | live | inventory | financials | analytics | settings | help
   const [profileOpen, setProfileOpen] = useState(false);
 
   const { data: catData } = useQuery(GET_CATEGORIES);
@@ -912,9 +912,9 @@ export default function SellerDashboard() {
 
         {/* Bottom links */}
         <div className="border-t border-[rgba(26,24,37,0.07)] px-3 py-3 flex flex-col gap-0.5">
-          <button onClick={() => {}}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-[7px] text-[12px] font-medium
-                       text-tertiary hover:text-primary hover:bg-[rgba(26,24,37,0.04)] transition-all">
+          <button onClick={() => setView('help')}
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-[7px] text-[12px] font-medium transition-all
+              ${view === 'help' ? 'text-accent bg-[rgba(0,113,227,0.06)]' : 'text-tertiary hover:text-primary hover:bg-[rgba(26,24,37,0.04)]'}`}>
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
@@ -1025,7 +1025,7 @@ export default function SellerDashboard() {
                   <StatCard label="Total Bids" value={totalBids.toLocaleString()} delta="+8%" deltaPositive
                     icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>} />
                   <StatCard label="Revenue" value={formatCurrency(totalRevenue)} delta="—" deltaPositive={false}
-                    icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>} />
+                    icon={<span className="w-4 h-4 flex items-center justify-center text-[13px] font-bold">₹</span>} />
                   <StatCard label="Items Sold" value={closed.length} delta={`${closed.length}`} deltaPositive={false}
                     icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>} />
                 </div>
@@ -1213,6 +1213,48 @@ export default function SellerDashboard() {
                 </div>
                 <SettingsView user={user} onLogout={handleLogout} />
               </>
+            )}
+
+            {view === 'help' && (
+              <div className="space-y-5">
+                <div className="mb-7">
+                  <h1 className="text-[28px] font-bold text-primary tracking-tight">Help Center</h1>
+                  <p className="text-[13.5px] text-secondary mt-1">Find answers to common questions.</p>
+                </div>
+                {[
+                  { q: 'How do I list an item for auction?', a: 'Go to your Dashboard and click "Create Listing". Fill in the item details, upload photos, set a starting price and auction duration, then publish.' },
+                  { q: 'How do I set the right starting price?', a: 'Set a starting price that attracts initial bids. A lower starting price often generates more interest and competitive bidding.' },
+                  { q: 'What happens when my auction ends?', a: 'The highest bidder wins. You\'ll be notified and a chat room is created so you can arrange delivery/payment with the buyer.' },
+                  { q: 'Can I cancel an active auction?', a: 'Auctions with active bids cannot be cancelled. Contact support if you need assistance with an exceptional case.' },
+                  { q: 'How do I communicate with the winner?', a: 'A chat room is automatically created between you and the winner when the auction ends. Access it from Messages.' },
+                  { q: 'How are bid battles triggered?', a: 'When two or more bidders place bids within 30 seconds of each other, a Bid Battle is automatically triggered, creating excitement and potentially higher final prices.' },
+                ].map(({ q, a }, i) => (
+                  <details key={i} className="bg-white rounded-[14px] border border-[rgba(26,24,37,0.07)]
+                                  shadow-[0_1px_8px_rgba(26,24,37,0.06)] overflow-hidden group">
+                    <summary className="px-6 py-4 cursor-pointer list-none flex items-center justify-between
+                                        hover:bg-[rgba(26,24,37,0.02)] transition-colors">
+                      <span className="text-[13.5px] font-semibold text-primary">{q}</span>
+                      <svg className="w-4 h-4 text-tertiary shrink-0 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </summary>
+                    <div className="px-6 pb-4 text-[13px] text-secondary leading-relaxed border-t border-[rgba(26,24,37,0.05)] pt-3">
+                      {a}
+                    </div>
+                  </details>
+                ))}
+                <div className="bg-white rounded-[14px] border border-[rgba(26,24,37,0.07)]
+                                shadow-[0_1px_8px_rgba(26,24,37,0.06)] p-6 text-center">
+                  <p className="text-[13px] text-secondary mb-3">Still need help?</p>
+                  <a href="mailto:support@auctionlive.com"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[8px]
+                               bg-primary text-white text-[13px] font-semibold
+                               hover:bg-[#2c2a38] active:scale-[0.97] transition-all
+                               shadow-[0_2px_8px_rgba(26,24,37,0.22)]">
+                    Contact Support
+                  </a>
+                </div>
+              </div>
             )}
 
             <div className="h-8" />

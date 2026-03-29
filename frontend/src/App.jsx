@@ -8,9 +8,10 @@ import AuctionDetail from './pages/AuctionDetail';
 import SellerDashboard from './pages/SellerDashboard';
 import BuyerDashboard from './pages/BuyerDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import ChatPage from './pages/ChatPage';
 
 /* Routes that have their own full-page shell — hide the global Navbar */
-const DASHBOARD_ROUTES = ['/seller-dashboard', '/buyer-dashboard'];
+const DASHBOARD_ROUTES = ['/seller-dashboard', '/buyer-dashboard', '/chat'];
 
 export default function App() {
   const { pathname } = useLocation();
@@ -39,6 +40,14 @@ export default function App() {
           element={
             <ProtectedRoute allowedRole="buyer">
               <BuyerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
             </ProtectedRoute>
           }
         />

@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
+import { useSearchParams } from 'react-router-dom';
 import { GET_ITEMS, GET_CATEGORIES } from '../graphql/queries';
 import AuctionCard from '../components/AuctionCard';
 import Toast from '../components/Toast';
+import ActivityFeed from '../components/ActivityFeed';
+import AuctionsEndingSoon from '../components/AuctionsEndingSoon';
 
 function SkeletonCard() {
   return (
@@ -22,8 +25,20 @@ function SkeletonCard() {
 }
 
 export default function Home() {
-  const [search, setSearch] = useState('');
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('q') || '');
   const [selectedCategory, setSelectedCategory] = useState('');
+
+  // Sync when navbar search navigates here
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q) {
+      setSearch(q);
+      setTimeout(() => {
+        document.getElementById('auctions')?.scrollIntoView({ behavior: 'smooth' });
+      }, 300);
+    }
+  }, [searchParams]);
 
   const { data: catData } = useQuery(GET_CATEGORIES);
   const { data, loading, error } = useQuery(GET_ITEMS, {
@@ -34,15 +49,22 @@ export default function Home() {
   const categories = catData?.getCategories || [];
   const items = data?.getItems || [];
   const filtered = search
-    ? items.filter((i) => i.title.toLowerCase().includes(search.toLowerCase()))
+    ? items.filter((i) => {
+        const q = search.toLowerCase();
+        return i.title.toLowerCase().includes(q)
+          || (i.description && i.description.toLowerCase().includes(q))
+          || (i.category?.name && i.category.name.toLowerCase().includes(q));
+      })
     : items;
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-base">
       <Toast />
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
-      <section className="pt-[100px] pb-16 px-6 text-center">
+      <section className="pt-[86px] pb-16 px-6 text-center">
         {/* Eyebrow */}
         <p className="label-muted mb-6 tracking-[0.22em]">AuctionLive</p>
 
@@ -107,91 +129,124 @@ export default function Home() {
 
       {/* Live Auctions Section */}
       <section id="auctions" className="bg-surface/70 py-14 px-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Section header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl font-bold text-primary">Live Auctions</h2>
-              <p className="text-sm text-secondary mt-0.5">Ending soon — bid before it's too late</p>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-live-red animate-pulse" />
-              <span className="text-xs font-semibold text-live-red uppercase tracking-wider">Live</span>
-            </div>
-          </div>
+        <div className="max-w-[1400px] mx-auto">
 
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-8">
-            <div className="relative flex-1 max-w-md">
-              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+          {/* Mobile sidebar toggle */}
+          <div className="xl:hidden mb-4 flex justify-end">
+            <button
+              onClick={() => setSidebarOpen((o) => !o)}
+              className="flex items-center gap-2 px-3 py-2 rounded-[8px] text-[13px] font-medium
+                         text-secondary bg-white border border-[rgba(26,24,37,0.1)]
+                         hover:text-primary hover:border-[rgba(26,24,37,0.2)] transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"/>
               </svg>
-              <input className="input pl-10 bg-white shadow-sm" placeholder="Search auctions…"
-                value={search} onChange={(e) => setSearch(e.target.value)} />
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={() => setSelectedCategory('')}
-                className={`badge px-4 py-2 rounded-pill text-sm font-medium transition-all
-                  ${!selectedCategory ? 'bg-accent text-white shadow-btn' : 'bg-white text-secondary hover:text-primary border border-[rgba(29,28,31,0.1)]'}`}
-              >
-                All
-              </button>
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(selectedCategory === cat.id ? '' : cat.id)}
-                  className={`badge px-4 py-2 rounded-pill text-sm font-medium transition-all
-                    ${selectedCategory === cat.id ? 'bg-accent text-white shadow-btn' : 'bg-white text-secondary hover:text-primary border border-[rgba(29,28,31,0.1)]'}`}
-                >
-                  {cat.name}
-                </button>
-              ))}
-            </div>
+              {sidebarOpen ? 'Hide' : 'Show'} Live Feed
+            </button>
           </div>
 
-          {/* Count */}
-          {!loading && !error && (
-            <p className="text-sm text-secondary mb-5">
-              {filtered.length} auction{filtered.length !== 1 ? 's' : ''} found
-              {search && ` for "${search}"`}
-            </p>
-          )}
+          {/* 3-column layout on xl, 1-column on smaller */}
+          <div className="flex gap-6 items-start">
 
-          {/* Error */}
-          {error && (
-            <div className="text-center py-16">
-              <p className="text-red-500 font-medium mb-1">Failed to load auctions</p>
-              <p className="text-sm text-secondary">{error.message}</p>
-            </div>
-          )}
+            {/* ── Main content (auctions grid) ───────────────────────── */}
+            <div className="flex-1 min-w-0">
+              {/* Section header */}
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-bold text-primary">Live Auctions</h2>
+                  <p className="text-sm text-secondary mt-0.5">Ending soon — bid before it's too late</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-live-red animate-pulse" />
+                  <span className="text-xs font-semibold text-live-red uppercase tracking-wider">Live</span>
+                </div>
+              </div>
 
-          {/* Skeleton */}
-          {loading && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
-            </div>
-          )}
+              {/* Filters */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-8">
+                <div className="relative flex-1 max-w-md">
+                  <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+                  </svg>
+                  <input className="input pl-10 bg-white shadow-sm" placeholder="Search auctions…"
+                    value={search} onChange={(e) => setSearch(e.target.value)} />
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => setSelectedCategory('')}
+                    className={`badge px-4 py-2 rounded-pill text-sm font-medium transition-all
+                      ${!selectedCategory ? 'bg-accent text-white shadow-btn' : 'bg-white text-secondary hover:text-primary border border-[rgba(29,28,31,0.1)]'}`}
+                  >
+                    All
+                  </button>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setSelectedCategory(selectedCategory === cat.id ? '' : cat.id)}
+                      className={`badge px-4 py-2 rounded-pill text-sm font-medium transition-all
+                        ${selectedCategory === cat.id ? 'bg-accent text-white shadow-btn' : 'bg-white text-secondary hover:text-primary border border-[rgba(29,28,31,0.1)]'}`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          {/* Grid */}
-          {!loading && !error && filtered.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filtered.map((item) => <AuctionCard key={item.id} item={item} />)}
-            </div>
-          )}
+              {/* Count */}
+              {!loading && !error && (
+                <p className="text-sm text-secondary mb-5">
+                  {filtered.length} auction{filtered.length !== 1 ? 's' : ''} found
+                  {search && ` for "${search}"`}
+                </p>
+              )}
 
-          {/* Empty */}
-          {!loading && !error && filtered.length === 0 && (
-            <div className="text-center py-20">
-              <div className="text-5xl mb-4">🔨</div>
-              <h3 className="text-lg font-semibold text-primary mb-2">No Auctions Found</h3>
-              <p className="text-secondary text-sm">
-                {search ? 'Try a different search term.' : 'No active auctions right now. Check back soon!'}
-              </p>
+              {/* Error */}
+              {error && (
+                <div className="text-center py-16">
+                  <p className="text-red-500 font-medium mb-1">Failed to load auctions</p>
+                  <p className="text-sm text-secondary">{error.message}</p>
+                </div>
+              )}
+
+              {/* Skeleton */}
+              {loading && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
+              )}
+
+              {/* Grid */}
+              {!loading && !error && filtered.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {filtered.map((item) => <AuctionCard key={item.id} item={item} />)}
+                </div>
+              )}
+
+              {/* Empty */}
+              {!loading && !error && filtered.length === 0 && (
+                <div className="text-center py-20">
+                  <div className="text-5xl mb-4">🔨</div>
+                  <h3 className="text-lg font-semibold text-primary mb-2">No Auctions Found</h3>
+                  <p className="text-secondary text-sm">
+                    {search ? 'Try a different search term.' : 'No active auctions right now. Check back soon!'}
+                  </p>
+                </div>
+              )}
             </div>
-          )}
+
+            {/* ── Right sidebar ──────────────────────────────────────── */}
+            {/* Desktop: always visible. Mobile: collapsible */}
+            <aside className={`w-[280px] shrink-0 flex flex-col gap-0
+                               ${sidebarOpen ? 'block' : 'hidden'} xl:block`}>
+              <ActivityFeed />
+              <AuctionsEndingSoon />
+            </aside>
+
+          </div>
         </div>
       </section>
 

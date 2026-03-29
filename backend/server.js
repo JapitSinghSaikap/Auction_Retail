@@ -8,8 +8,11 @@ const { ApolloServer } = require('apollo-server-express');
 const typeDefs = require('./graphql/schema');
 const resolvers = require('./graphql/resolvers');
 const authMiddleware = require('./middleware/auth');
-const authRoutes = require('./routes/auth');
-const uploadRoutes = require('./routes/upload');
+const authRoutes         = require('./routes/auth');
+const uploadRoutes       = require('./routes/upload');
+const intelligenceRoutes = require('./routes/intelligence');
+const { router: activityRouter } = require('./routes/activity');
+const { checkEndingSoon }        = require('./jobs/endingSoon');
 const { sequelize, Category } = require('./models');
 const initBidSocket = require('./sockets/bidSocket');
 
@@ -40,6 +43,12 @@ async function startServer() {
 
   // Image upload route
   app.use('/api/upload', uploadRoutes);
+
+  // Intelligence / analysis API
+  app.use('/api/intelligence', intelligenceRoutes);
+
+  // Global activity feed
+  app.use('/api/activity', activityRouter);
 
   // Apollo GraphQL server
   const apolloServer = new ApolloServer({
@@ -87,6 +96,9 @@ async function startServer() {
       ]);
       console.log('Default categories seeded.');
     }
+    // Start ending-soon background job
+    checkEndingSoon(io);
+    console.log('Ending-soon job started (every 15 min).');
   } catch (err) {
     console.error('Database initialization failed:', err);
     process.exit(1);

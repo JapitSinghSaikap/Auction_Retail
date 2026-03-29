@@ -37,6 +37,36 @@ const typeDefs = gql`
     createdAt: String!
   }
 
+  type Message {
+    id: ID!
+    chatRoomId: String!
+    message: String!
+    isRead: Boolean!
+    createdAt: String!
+    sender: User
+    receiver: User
+  }
+
+  type ChatRoom {
+    chatRoomId: String!
+    item: Item
+    buyer: User
+    seller: User
+    lastMessage: Message
+    unreadCount: Int
+  }
+
+  type Notification {
+    id: ID!
+    type: String!
+    title: String!
+    message: String!
+    itemId: ID
+    isRead: Boolean!
+    createdAt: String!
+    item: Item
+  }
+
   type AuthPayload {
     token: String!
     user: User!
@@ -49,6 +79,11 @@ const typeDefs = gql`
     getMyItems(sellerId: ID!): [Item]
     getMyBids(userId: ID!): [Bid]
     getCategories: [Category]
+    getChatRoom(itemId: ID!): ChatRoom
+    getMessages(chatRoomId: String!): [Message]
+    getMyChatRooms(userId: ID!): [ChatRoom]
+    getNotifications(userId: ID!): [Notification]
+    getUnreadCount(userId: ID!): Int
   }
 
   type Mutation {
@@ -69,6 +104,21 @@ const typeDefs = gql`
     ): Bid
 
     closeExpiredAuctions: Boolean
+
+    sendMessage(
+      chatRoomId: String!
+      senderId: ID!
+      receiverId: ID!
+      message: String!
+    ): Message
+
+    markMessagesRead(
+      chatRoomId: String!
+      userId: ID!
+    ): Boolean
+
+    markNotificationRead(id: ID!): Boolean
+    markAllNotificationsRead(userId: ID!): Boolean
   }
 `;
 

@@ -126,3 +126,114 @@ export const GET_CATEGORIES = gql`
     }
   }
 `;
+
+export const GET_CHAT_ROOM = gql`
+  query GetChatRoom($itemId: ID!) {
+    getChatRoom(itemId: $itemId) {
+      chatRoomId
+      item {
+        id
+        title
+        image
+        currentPrice
+        status
+      }
+      buyer {
+        id
+        name
+      }
+      seller {
+        id
+        name
+      }
+      lastMessage {
+        id
+        message
+        createdAt
+        sender {
+          id
+          name
+        }
+      }
+      unreadCount
+    }
+  }
+`;
+
+export const GET_MESSAGES = gql`
+  query GetMessages($chatRoomId: String!) {
+    getMessages(chatRoomId: $chatRoomId) {
+      id
+      chatRoomId
+      message
+      isRead
+      createdAt
+      sender {
+        id
+        name
+      }
+      receiver {
+        id
+        name
+      }
+    }
+  }
+`;
+
+export const GET_NOTIFICATIONS = gql`
+  query GetNotifications($userId: ID!) {
+    getNotifications(userId: $userId) {
+      id
+      type
+      title
+      message
+      itemId
+      isRead
+      createdAt
+      item {
+        id
+        title
+        image
+      }
+    }
+  }
+`;
+
+export const GET_UNREAD_COUNT = gql`
+  query GetUnreadCount($userId: ID!) {
+    getUnreadCount(userId: $userId)
+  }
+`;
+
+export const GET_MY_CHAT_ROOMS = gql`
+  query GetMyChatRooms($userId: ID!) {
+    getMyChatRooms(userId: $userId) {
+      chatRoomId
+      item {
+        id
+        title
+        image
+        currentPrice
+        status
+      }
+      buyer {
+        id
+        name
+      }
+      seller {
+        id
+        name
+      }
+      lastMessage {
+        id
+        message
+        createdAt
+        sender {
+          id
+          name
+        }
+      }
+      unreadCount
+    }
+  }
+`;

@@ -52,3 +52,51 @@ export const CLOSE_EXPIRED_AUCTIONS = gql`
     closeExpiredAuctions
   }
 `;
+
+export const SEND_MESSAGE = gql`
+  mutation SendMessage(
+    $chatRoomId: String!
+    $senderId: ID!
+    $receiverId: ID!
+    $message: String!
+  ) {
+    sendMessage(
+      chatRoomId: $chatRoomId
+      senderId: $senderId
+      receiverId: $receiverId
+      message: $message
+    ) {
+      id
+      chatRoomId
+      message
+      isRead
+      createdAt
+      sender {
+        id
+        name
+      }
+      receiver {
+        id
+        name
+      }
+    }
+  }
+`;
+
+export const MARK_READ = gql`
+  mutation MarkMessagesRead($chatRoomId: String!, $userId: ID!) {
+    markMessagesRead(chatRoomId: $chatRoomId, userId: $userId)
+  }
+`;
+
+export const MARK_NOTIFICATION_READ = gql`
+  mutation MarkNotificationRead($id: ID!) {
+    markNotificationRead(id: $id)
+  }
+`;
+
+export const MARK_ALL_NOTIFICATIONS_READ = gql`
+  mutation MarkAllNotificationsRead($userId: ID!) {
+    markAllNotificationsRead(userId: $userId)
+  }
+`;

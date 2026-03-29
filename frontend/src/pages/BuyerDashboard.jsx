@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { GET_MY_BIDS } from '../graphql/queries';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../hooks/useSocket';
 import Toast from '../components/Toast';
 import CountdownTimer from '../components/CountdownTimer';
 import { formatCurrency } from '../utils/formatters';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 /* ── Sidebar nav item ──────────────────────────────────────────────── */
 function SideItem({ icon, label, badge, active = false, onClick }) {
@@ -58,7 +59,7 @@ const Ic = {
   bids:    <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>,
   watch:   <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>,
   won:     <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>,
-  spend:   <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
+  spend:   <span className="text-[13px] font-bold leading-none">₹</span>,
   home:    <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>,
   trend:   <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>,
   trophy:  <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
@@ -75,8 +76,11 @@ export default function BuyerDashboard() {
   const { onBidUpdated } = useSocket();
 
   const [activeTab,  setActiveTab]  = useState('overview');
-  const [sideActive, setSideActive] = useState('bids');
+  const [sideActive, setSideActive] = useState('overview');
   const [liveAlert,  setLiveAlert]  = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const goToTab = (tab, side) => { setActiveTab(tab); setSideActive(side); };
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -149,10 +153,10 @@ export default function BuyerDashboard() {
 
         {/* Section: Main */}
         <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-tertiary px-3 mb-1">Main</p>
-        <SideItem icon={Ic.home}   label="Overview"  active={sideActive === 'overview'}  onClick={() => { setSideActive('overview');  setActiveTab('overview'); }} />
-        <SideItem icon={Ic.bids}   label="My Bids"   badge={activeBids.length || undefined} active={sideActive === 'bids'} onClick={() => { setSideActive('bids'); setActiveTab('my bids'); }} />
-        <SideItem icon={Ic.watch}  label="Watchlist"  active={sideActive === 'watchlist'} onClick={() => { setSideActive('watchlist');  setActiveTab('watchlist'); }} />
-        <SideItem icon={Ic.trophy} label="Won Items"  badge={wonBids.length || undefined}  active={sideActive === 'won'}  onClick={() => { setSideActive('won');   setActiveTab('won items'); }} />
+        <SideItem icon={Ic.home}   label="Overview"  active={sideActive === 'overview'}  onClick={() => goToTab('overview',  'overview')} />
+        <SideItem icon={Ic.bids}   label="My Bids"   badge={activeBids.length || undefined} active={sideActive === 'bids'} onClick={() => goToTab('my bids', 'bids')} />
+        <SideItem icon={Ic.watch}  label="Watchlist"  active={sideActive === 'watchlist'} onClick={() => goToTab('watchlist', 'watchlist')} />
+        <SideItem icon={Ic.trophy} label="Won Items"  badge={wonBids.length || undefined}  active={sideActive === 'won'}  onClick={() => goToTab('won items', 'won')} />
 
         {/* Section: Explore */}
         <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-tertiary px-3 mt-4 mb-1">Explore</p>
@@ -164,8 +168,19 @@ export default function BuyerDashboard() {
 
         {/* Bottom links */}
         <div className="border-t border-[rgba(26,24,37,0.07)] pt-3 flex flex-col gap-0.5">
-          <SideItem icon={Ic.help}     label="Help"     active={false} onClick={() => {}} />
-          <SideItem icon={Ic.settings} label="Settings" active={false} onClick={() => {}} />
+          <SideItem icon={Ic.help}     label="Help"     active={sideActive === 'help'} onClick={() => goToTab('help', 'help')} />
+          <SideItem icon={Ic.settings} label="Settings" active={sideActive === 'settings'} onClick={() => goToTab('settings', 'settings')} />
+          <Link to="/"
+            className="w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[8px]
+                       text-[13px] font-medium text-secondary hover:bg-[rgba(26,24,37,0.04)]
+                       hover:text-primary transition-all mt-1">
+            <span className="text-tertiary shrink-0">
+              <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+              </svg>
+            </span>
+            Back to site
+          </Link>
         </div>
       </aside>
 
@@ -180,23 +195,28 @@ export default function BuyerDashboard() {
 
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-[12px] font-medium text-secondary">
-            <span className="text-tertiary font-normal">AuctionLive</span>
+            <Link to="/" className="text-tertiary font-normal hover:text-primary transition-colors">AuctionLive</Link>
             <span className="text-tertiary">/</span>
             <span className="text-primary font-semibold">Buyer Dashboard</span>
           </div>
 
           {/* Tab nav */}
           <nav className="hidden md:flex items-center gap-0.5">
-            {tabs.map((t) => (
+            {[
+              { label: 'Overview',  tab: 'overview',   side: 'overview'  },
+              { label: 'My Bids',   tab: 'my bids',    side: 'bids'      },
+              { label: 'Won Items', tab: 'won items',   side: 'won'       },
+              { label: 'Watchlist', tab: 'watchlist',   side: 'watchlist' },
+            ].map(({ label, tab, side }) => (
               <button
-                key={t}
-                onClick={() => setActiveTab(t.toLowerCase())}
+                key={tab}
+                onClick={() => goToTab(tab, side)}
                 className={`px-3 py-1.5 rounded-[6px] text-[12.5px] font-medium transition-all
-                  ${activeTab === t.toLowerCase()
+                  ${activeTab === tab
                     ? 'bg-[rgba(26,24,37,0.07)] text-primary font-semibold'
                     : 'text-secondary hover:text-primary hover:bg-[rgba(26,24,37,0.04)]'}`}
               >
-                {t}
+                {label}
               </button>
             ))}
           </nav>
@@ -247,7 +267,8 @@ export default function BuyerDashboard() {
         {/* ── Scrollable main content ──────────────────────────────── */}
         <main className="flex-1 overflow-y-auto px-7 py-7">
 
-          {/* Greeting */}
+          {/* Greeting — Overview only */}
+          {activeTab === 'overview' && (
           <div className="mb-7">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-tertiary mb-1">
               {greeting}
@@ -259,9 +280,10 @@ export default function BuyerDashboard() {
               Track your active pursuits and curated collection in real time.
             </p>
           </div>
+          )}
 
-          {/* ── Stats row ──────────────────────────────────────────── */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {/* ── Stats row — Overview only ───────────────────────────── */}
+          {activeTab === 'overview' && <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatCard
               label="Active Bids"
               value={activeBids.length}
@@ -284,11 +306,12 @@ export default function BuyerDashboard() {
               value={totalSpent >= 1000
                 ? `₹${(totalSpent / 1000).toFixed(1)}k`
                 : formatCurrency(totalSpent)}
-              icon={<svg className="w-4 h-4 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
+              icon={<span className="w-4 h-4 flex items-center justify-center text-[13px] font-bold text-secondary">₹</span>}
             />
-          </div>
+          </div>}
 
-          {/* ── Active Bids Table ───────────────────────────────────── */}
+          {/* ── Bids Table — shared between Overview and My Bids tabs ── */}
+          {(activeTab === 'overview' || activeTab === 'my bids') && (
           <div className="bg-white rounded-[14px] border border-[rgba(26,24,37,0.07)]
                           shadow-[0_1px_8px_rgba(26,24,37,0.06)] overflow-hidden mb-6">
 
@@ -296,9 +319,13 @@ export default function BuyerDashboard() {
             <div className="flex items-center justify-between px-6 py-4
                             border-b border-[rgba(26,24,37,0.06)]">
               <div>
-                <h2 className="text-[14px] font-bold text-primary">Active Bids</h2>
+                <h2 className="text-[14px] font-bold text-primary">
+                  {activeTab === 'my bids' ? 'My Bids' : 'Active Bids'}
+                </h2>
                 <p className="text-[11.5px] text-secondary mt-0.5">
-                  {activeBids.length} auction{activeBids.length !== 1 ? 's' : ''} in progress
+                  {activeTab === 'my bids'
+                    ? `${uniqueBids.length} total bid${uniqueBids.length !== 1 ? 's' : ''}`
+                    : `${activeBids.length} auction${activeBids.length !== 1 ? 's' : ''} in progress`}
                 </p>
               </div>
               <button
@@ -365,7 +392,7 @@ export default function BuyerDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {uniqueBids.map((bid) => {
+                    {(activeTab === 'my bids' ? uniqueBids : activeBids).map((bid) => {
                       const item      = bid.item;
                       const isClosed  = item?.status === 'closed';
                       const isWinning = !isClosed && bid.myBestBid >= (item?.currentPrice || 0);
@@ -469,8 +496,10 @@ export default function BuyerDashboard() {
               </div>
             )}
           </div>
+          )}
 
-          {/* ── Pro tip banner ──────────────────────────────────────── */}
+          {/* Pro tip banner — Overview only */}
+          {activeTab === 'overview' && (
           <div className="rounded-[12px] border border-[rgba(0,113,227,0.18)]
                           bg-gradient-to-r from-[rgba(0,113,227,0.05)] to-[rgba(0,113,227,0.02)]
                           px-5 py-4 flex items-start gap-3.5">
@@ -486,6 +515,226 @@ export default function BuyerDashboard() {
               </p>
             </div>
           </div>
+          )}
+
+          {/* ── Won Items ───────────────────────────────────────────── */}
+          {activeTab === 'won items' && (
+            <div className="bg-white rounded-[14px] border border-[rgba(26,24,37,0.07)]
+                            shadow-[0_1px_8px_rgba(26,24,37,0.06)] overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[rgba(26,24,37,0.06)]">
+                <div>
+                  <h2 className="text-[14px] font-bold text-primary">Won Items</h2>
+                  <p className="text-[11.5px] text-secondary mt-0.5">
+                    {wonBids.length} auction{wonBids.length !== 1 ? 's' : ''} won
+                  </p>
+                </div>
+              </div>
+              {loading && (
+                <div className="flex items-center justify-center py-14">
+                  <div className="w-7 h-7 border-[3px] border-accent border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+              {!loading && wonBids.length === 0 && (
+                <div className="text-center py-16 px-6">
+                  <div className="text-4xl mb-3">🏆</div>
+                  <p className="font-semibold text-primary mb-1.5">No wins yet</p>
+                  <p className="text-secondary text-[13px] mb-5 max-w-[260px] mx-auto">
+                    Keep bidding — your victories will appear here.
+                  </p>
+                  <button onClick={() => navigate('/')}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[8px]
+                               bg-primary text-white text-[13px] font-semibold
+                               hover:bg-[#2c2a38] active:scale-[0.97] transition-all
+                               shadow-[0_2px_8px_rgba(26,24,37,0.22)]">
+                    Browse Auctions
+                  </button>
+                </div>
+              )}
+              {!loading && wonBids.length > 0 && (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-[rgba(26,24,37,0.025)]">
+                        <th className="text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-tertiary px-6 py-3 border-b border-[rgba(26,24,37,0.05)]">Item</th>
+                        <th className="text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-tertiary px-4 py-3 border-b border-[rgba(26,24,37,0.05)]">Winning Bid</th>
+                        <th className="text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-tertiary px-4 py-3 border-b border-[rgba(26,24,37,0.05)]">Category</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {wonBids.map((bid) => (
+                        <tr key={bid.id}
+                          onClick={() => bid.item && navigate(`/auction/${bid.item.id}`)}
+                          className="border-t border-[rgba(26,24,37,0.045)] hover:bg-[rgba(26,24,37,0.02)] cursor-pointer transition-colors group">
+                          <td className="px-6 py-3.5">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-[9px] bg-[#1a1825] shrink-0 overflow-hidden">
+                                {bid.item?.image ? (
+                                  <img src={resolveImageUrl(bid.item.image)} alt="" className="w-full h-full object-cover"
+                                    onError={(e) => { e.target.style.display = 'none'; }} />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-sm bg-gradient-to-br from-[#1a1a2e] to-[#2d1b4e]">🏆</div>
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-[13px] font-semibold text-accent group-hover:text-[#005bb5] truncate max-w-[200px] transition-colors">
+                                  {bid.item?.title || 'Unknown'}
+                                </p>
+                                <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold
+                                                 bg-green-50 text-green-700 border border-green-200
+                                                 px-2 py-0.5 rounded-full mt-1">
+                                  Won 🏆
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 text-right text-[13px] font-bold text-green-600">
+                            {formatCurrency(bid.myBestBid)}
+                          </td>
+                          <td className="px-4 py-3.5 text-[12px] text-secondary">
+                            {bid.item?.category?.name || '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Watchlist ───────────────────────────────────────────── */}
+          {activeTab === 'watchlist' && (
+            <div className="bg-white rounded-[14px] border border-[rgba(26,24,37,0.07)]
+                            shadow-[0_1px_8px_rgba(26,24,37,0.06)] overflow-hidden">
+              <div className="px-6 py-4 border-b border-[rgba(26,24,37,0.06)]">
+                <h2 className="text-[14px] font-bold text-primary">Watchlist</h2>
+                <p className="text-[11.5px] text-secondary mt-0.5">Items you're keeping an eye on</p>
+              </div>
+              <div className="text-center py-16 px-6">
+                <div className="text-4xl mb-3">👀</div>
+                <p className="font-semibold text-primary mb-1.5">Your watchlist is empty</p>
+                <p className="text-secondary text-[13px] mb-5 max-w-[260px] mx-auto">
+                  Save items from auctions to track them here.
+                </p>
+                <button onClick={() => navigate('/')}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[8px]
+                             bg-primary text-white text-[13px] font-semibold
+                             hover:bg-[#2c2a38] active:scale-[0.97] transition-all
+                             shadow-[0_2px_8px_rgba(26,24,37,0.22)]">
+                  Browse Auctions
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Settings ─────────────────────────────────────────── */}
+          {activeTab === 'settings' && (
+            <div className="space-y-5">
+              <div>
+                <h2 className="text-[18px] font-bold text-primary mb-1">Settings</h2>
+                <p className="text-[13px] text-secondary">Manage your account preferences.</p>
+              </div>
+
+              {/* Profile */}
+              <div className="bg-white rounded-[14px] border border-[rgba(26,24,37,0.07)]
+                              shadow-[0_1px_8px_rgba(26,24,37,0.06)] p-6">
+                <h3 className="text-[14px] font-bold text-primary mb-4">Profile</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-tertiary mb-1.5">Name</label>
+                    <input className="w-full px-3.5 py-2.5 rounded-[8px] border border-[rgba(26,24,37,0.12)]
+                                      bg-[rgba(26,24,37,0.02)] text-[13px] text-primary outline-none
+                                      focus:border-accent focus:ring-2 focus:ring-accent/10"
+                      defaultValue={user?.name} readOnly />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-tertiary mb-1.5">Email</label>
+                    <input className="w-full px-3.5 py-2.5 rounded-[8px] border border-[rgba(26,24,37,0.12)]
+                                      bg-[rgba(26,24,37,0.02)] text-[13px] text-primary outline-none
+                                      focus:border-accent focus:ring-2 focus:ring-accent/10"
+                      defaultValue={user?.email} readOnly />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-tertiary mb-1.5">Role</label>
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-accent/10 text-accent text-[12px] font-semibold capitalize">
+                    {user?.role}
+                  </span>
+                </div>
+              </div>
+
+              {/* Notifications prefs */}
+              <div className="bg-white rounded-[14px] border border-[rgba(26,24,37,0.07)]
+                              shadow-[0_1px_8px_rgba(26,24,37,0.06)] p-6">
+                <h3 className="text-[14px] font-bold text-primary mb-4">Notification Preferences</h3>
+                {['Outbid alerts', 'Auction ending soon', 'Won auction', 'New bids on my listings'].map((pref) => (
+                  <label key={pref} className="flex items-center justify-between py-2.5 border-b border-[rgba(26,24,37,0.05)] last:border-0">
+                    <span className="text-[13px] text-primary">{pref}</span>
+                    <input type="checkbox" defaultChecked
+                      className="w-4 h-4 rounded accent-accent cursor-pointer" />
+                  </label>
+                ))}
+              </div>
+
+              {/* Danger zone */}
+              <div className="bg-white rounded-[14px] border border-[rgba(26,24,37,0.07)]
+                              shadow-[0_1px_8px_rgba(26,24,37,0.06)] p-6">
+                <h3 className="text-[14px] font-bold text-primary mb-2">Account</h3>
+                <p className="text-[12.5px] text-secondary mb-4">Sign out of your account.</p>
+                <button onClick={() => { logout(); navigate('/'); }}
+                  className="px-4 py-2 rounded-[8px] border border-red-200 text-red-600
+                             text-[13px] font-semibold hover:bg-red-50 transition-colors">
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Help Center ───────────────────────────────────────── */}
+          {activeTab === 'help' && (
+            <div className="space-y-5">
+              <div>
+                <h2 className="text-[18px] font-bold text-primary mb-1">Help Center</h2>
+                <p className="text-[13px] text-secondary">Find answers to common questions.</p>
+              </div>
+
+              {[
+                { q: 'How do I place a bid?', a: 'Navigate to any active auction and enter your bid amount. You can set a maximum bid and our system will automatically bid on your behalf up to that amount.' },
+                { q: 'What happens when I win an auction?', a: 'You\'ll receive a notification when you win. The item will appear in your "Won Items" tab. The seller will be notified and you can communicate via the chat feature.' },
+                { q: 'How does the countdown timer work?', a: 'Each auction has a set end time. The countdown shows remaining time. Some auctions may extend if a bid is placed in the final moments.' },
+                { q: 'What is Auto-Snipe?', a: 'Auto-Snipe places a bid automatically in the last few seconds of an auction. Set your maximum amount and the system handles the rest.' },
+                { q: 'How do I contact a seller?', a: 'After winning an auction, a chat room is automatically created between you and the seller. Access it from the Messages section.' },
+                { q: 'Can I retract a bid?', a: 'Bids are binding and cannot be retracted once placed. Make sure to review your bid amount before confirming.' },
+                { q: 'How is the winner determined?', a: 'The highest bidder when the auction ends wins the item. If you\'ve set a maximum bid, the system bids incrementally up to your limit.' },
+              ].map(({ q, a }, i) => (
+                <details key={i} className="bg-white rounded-[14px] border border-[rgba(26,24,37,0.07)]
+                                shadow-[0_1px_8px_rgba(26,24,37,0.06)] overflow-hidden group">
+                  <summary className="px-6 py-4 cursor-pointer list-none flex items-center justify-between
+                                      hover:bg-[rgba(26,24,37,0.02)] transition-colors">
+                    <span className="text-[13.5px] font-semibold text-primary">{q}</span>
+                    <svg className="w-4 h-4 text-tertiary shrink-0 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <div className="px-6 pb-4 text-[13px] text-secondary leading-relaxed border-t border-[rgba(26,24,37,0.05)] pt-3">
+                    {a}
+                  </div>
+                </details>
+              ))}
+
+              <div className="bg-white rounded-[14px] border border-[rgba(26,24,37,0.07)]
+                              shadow-[0_1px_8px_rgba(26,24,37,0.06)] p-6 text-center">
+                <p className="text-[13px] text-secondary mb-3">Still need help?</p>
+                <a href="mailto:support@auctionlive.com"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[8px]
+                             bg-primary text-white text-[13px] font-semibold
+                             hover:bg-[#2c2a38] active:scale-[0.97] transition-all
+                             shadow-[0_2px_8px_rgba(26,24,37,0.22)]">
+                  Contact Support
+                </a>
+              </div>
+            </div>
+          )}
 
           {/* Footer spacer */}
           <div className="h-8" />

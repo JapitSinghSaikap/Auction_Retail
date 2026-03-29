@@ -1,11 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import CountdownTimer from './CountdownTimer';
-import { formatCurrency, truncate, getPlaceholderImage } from '../utils/formatters';
+import { formatCurrency, truncate } from '../utils/formatters';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 export default function AuctionCard({ item }) {
   const navigate = useNavigate();
-  const imageUrl = item.image?.startsWith('http') ? item.image : getPlaceholderImage(item.title);
+  const imageUrl = resolveImageUrl(item.image, item.title);
 
   return (
     <div
@@ -19,7 +20,7 @@ export default function AuctionCard({ item }) {
           src={imageUrl}
           alt={item.title}
           className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
-          onError={(e) => { e.target.src = getPlaceholderImage(item.title); }}
+          onError={(e) => { e.target.src = resolveImageUrl(null, item.title); }}
         />
         {/* LIVE badge */}
         {item.status === 'active' && (
