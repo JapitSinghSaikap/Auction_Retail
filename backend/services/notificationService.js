@@ -22,7 +22,7 @@ async function createNotification(io, userId, type, title, message, itemId = nul
         message,
         itemId,
         isRead:    false,
-        createdAt: notif.createdAt,
+        createdAt: notif.createdAt ? notif.createdAt.toISOString() : new Date().toISOString(),
       });
     }
 

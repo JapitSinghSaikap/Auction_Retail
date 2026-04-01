@@ -14,7 +14,10 @@ const TYPE_CONFIG = {
 };
 
 function timeAgo(ts) {
-  const diff = Date.now() - new Date(ts).getTime();
+  if (!ts) return 'just now';
+  const date = new Date(Number(ts) || ts);
+  const diff = Date.now() - date.getTime();
+  if (isNaN(diff)) return 'just now';
   const s = Math.floor(diff / 1000);
   if (s < 5)  return 'just now';
   if (s < 60) return `${s}s ago`;
